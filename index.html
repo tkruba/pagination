@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type="module" defer src="./script.js"></script>
+    <link rel="stylesheet" href="./style.css">
+    <base href=".">
+</head>
+<body>
+    <div class="filter" data-pagination-filter="test">
+        <input type="text" name="providers">
+        <input type="checkbox" name="webproviders">
+        <input type="radio" name="year" value="current">
+        <input type="radio" name="year" value="precedent">
+    </div>
+    <div id="items-list" class="pagination-container" data-pagination-name="test"></div>
+</body>
+</html>

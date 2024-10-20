@@ -1,0 +1,60 @@
+body {
+    display: flex;
+    justify-content: center;
+    padding: 2em;
+}
+
+.pagination-container {
+    border: 1px solid gray;
+    padding: 0.5em;
+    width: 600px;
+    min-height: 800px;
+}
+
+.skeleton {
+    animation: skeleton-loading 1s linear infinite alternate;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-color: hsl(200, 20%, 80%);
+    }
+    100% {
+        background-color: hsl(200, 20%, 95%);
+    }
+}
+
+.skeleton-table {
+    width: 100%;
+    height: 12em;
+}
+
+.error {
+    width: 100%;
+    border: 1px solid red;
+}
+
+.noData {
+    width: 100%;
+    border: 1px solid purple;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table td, table th {
+    border: 1px solid #DDD;
+    padding: 0.5em;
+}
+
+table th {
+    text-align: left;
+    background-color: #04AA6D;
+    color: white;
+}
+
+table th[data-value="id"] {
+    width: 1.5em;
+}

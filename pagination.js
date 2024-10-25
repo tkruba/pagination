@@ -1,3 +1,5 @@
+import { skeletonTable } from "./skeleton.js";
+
 export default class Pagination {
     constructor(container, columns, searchButton, searchUrl, callback, options, perPage = 10, method = "GET", autoload = false) {
         this.container = container;
@@ -14,35 +16,44 @@ export default class Pagination {
         this.maxPage = 10;
     }
 
-    init = async () => {
+    init = () => {
         if (this.autoload) {
-            this.createSkeleton();
-            const data = await this.fetchData();
-            this.removeSkeleton();
-            if (data instanceof Error) {
-                this.createError(data.message);
-                return;
-            }
-            const table = this.createTable();
-            this.container.append(table);
-            this.appendData(data);
-            this.totalItems = 97; // data.total;
-            this.maxPage = 10; // Math.ceil(data.total / this.perPage);
-            this.createPaginationBar();
-            this.updatePaginationBar();
+            this.startLoad();
         }
         if (this.searchButton) {
             this.searchButton.addEventListener('click', async (event) => {
                 event.preventDefault();
                 this.createSkeleton();
                 const data = await this.fetchData();
-                this.removeSkeleton();
+                this.removeSkeleton2();
                 if (data instanceof Error) {
                     this.createError(data.message);
                     return;
                 }
             });
         }
+    }
+
+    startLoad = async () => {
+        const table = this.createTable();
+        
+        const skeleton = skeletonTable();
+        this.container.append(table);
+        this.appendData(skeleton);
+        // table.append(skeleton);
+
+        const data = await this.fetchData();
+        if (data instanceof Error) {
+            this.createError(data.message);
+            return;
+        }
+        // this.replaceData(skeleton);
+        this.replaceData(data);
+        // this.appendData(data);
+        this.totalItems = 97; // data.total;
+        this.maxPage = 10; // Math.ceil(data.total / this.perPage);
+        this.createPaginationBar();
+        this.updatePaginationBar();
     }
 
     createTable = () => {
@@ -64,6 +75,40 @@ export default class Pagination {
         return table;
     }
 
+    replaceData = (newData) => {
+        const table = this.container.querySelector(`#table-${this.container.dataset.paginationName}`);
+        if (!table) {
+            return;
+        }
+        const thead = table.querySelector('thead');
+        const order = [...thead.firstChild.children];
+        
+        const tableBody = table.querySelector('tbody');
+        if (!tableBody) {
+            return;
+        }
+
+        const rows = tableBody.querySelectorAll('tr');
+        if (!rows) {
+            return;
+        }
+        
+        rows.forEach((row, key) => {
+            const columns = row.querySelectorAll('td');
+            columns.forEach((column, columnKey) => {
+                if (newData[key] instanceof Array) {
+                    column.classList.add(...newData[key][columnKey].classList);
+                    column.innerText = "";
+                } else {
+                    const columnVal = order[columnKey].dataset.value;
+                    column.classList.remove(...column.classList);
+                    column.id = "";
+                    column.innerText = newData[key][columnVal];
+                }
+            });
+        });
+    }
+
     removeTable = () => {
         const table = this.container.querySelector(`#table-${this.container.dataset.paginationName}`);
         if (table) {
@@ -76,9 +121,14 @@ export default class Pagination {
         const tbody = document.createElement('tbody');
         data.forEach(element => {
             const tr = document.createElement('tr');
-            this.order.forEach(order => {
-                const td = document.createElement('td');
-                td.innerText = element[order];
+            this.order.forEach((order, orderKey) => {
+                let td = null;
+                if (element instanceof Array) {
+                    td = element[orderKey];
+                } else {
+                    td = document.createElement('td');
+                    td.innerText = element[order];
+                }
                 tr.append(td);
             });
             tbody.append(tr);
@@ -109,25 +159,6 @@ export default class Pagination {
         } catch(error) {
             console.error(error);
             return error;
-        }
-    }
-
-    createSkeleton = () => {
-        const skeleton = document.createElement('div');
-        skeleton.classList.add('skeleton', 'skeleton-table');
-        skeleton.id = `skeleton-data-${this.container.dataset.paginationName}`;
-        const table = this.container.querySelector(`#table-${this.container.dataset.paginationName}`);
-        if (table) {
-            table.append(skeleton);
-        } else {
-            this.container.append(skeleton);
-        }
-    }
-
-    removeSkeleton = () => {
-        const skeleton = this.container.querySelector(`#skeleton-data-${this.container.dataset.paginationName}`);
-        if (skeleton) {
-            skeleton.remove();
         }
     }
 
@@ -227,17 +258,17 @@ export default class Pagination {
             console.error(error);
             return;
         }
-        this.removeData();
-        this.createSkeleton();
+        const table = this.container.querySelector(`#table-${this.container.dataset.paginationName}`);
+        const skeleton = skeletonTable();
+        this.replaceData(skeleton);
         const data = await this.fetchData();
-        this.removeSkeleton();
         if (data instanceof Error) {
             this.createError(data.message);
             this.removeTable();
             this.removePaginationBar();
             return;
         }
-        this.appendData(data);
+        this.replaceData(data);
         this.totalItems = 100; // data.total;
         this.maxPage = 10; // Math.ceil(data.total / this.perPage);
 

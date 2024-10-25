@@ -1,12 +1,13 @@
 import { skeletonTable } from "./skeleton.js";
 
 export default class Pagination {
-    constructor(container, columns, searchButton, searchUrl, callback, options, perPage = 10, method = "GET", autoload = false) {
+    constructor(container, columns, searchButton, searchUrl, successCallback, failureCallback, options, perPage = 10, method = "GET", autoload = false) {
         this.container = container;
         this.columns = columns;
         this.searchButton = searchButton;
         this.searchUrl = searchUrl;
-        this.callback = callback;
+        this.successCallback = successCallback;
+        this.failureCallback = failureCallback;
         this.options = options;
         this.perPage = perPage;
         this.method = method;
@@ -14,6 +15,7 @@ export default class Pagination {
         this.order = [];
         this.currentPage = 1;
         this.maxPage = 10;
+        this.error = false;
     }
 
     init = () => {
@@ -21,14 +23,12 @@ export default class Pagination {
             this.startLoad();
         }
         if (this.searchButton) {
-            this.searchButton.addEventListener('click', async (event) => {
+            this.searchButton.addEventListener('click', (event) => {
                 event.preventDefault();
-                this.createSkeleton();
-                const data = await this.fetchData();
-                this.removeSkeleton2();
-                if (data instanceof Error) {
-                    this.createError(data.message);
-                    return;
+                if (this.autoload) {
+                    this.updatePagination();
+                } else {
+                    this.startLoad();
                 }
             });
         }
@@ -40,20 +40,17 @@ export default class Pagination {
         const skeleton = skeletonTable();
         this.container.append(table);
         this.appendData(skeleton);
-        // table.append(skeleton);
-
         const data = await this.fetchData();
         if (data instanceof Error) {
             this.createError(data.message);
             return;
         }
-        // this.replaceData(skeleton);
         this.replaceData(data);
-        // this.appendData(data);
         this.totalItems = 97; // data.total;
         this.maxPage = 10; // Math.ceil(data.total / this.perPage);
         this.createPaginationBar();
         this.updatePaginationBar();
+        this.successCallback(table.querySelector('tbody').childNodes);
     }
 
     createTable = () => {
@@ -129,6 +126,7 @@ export default class Pagination {
                     td = document.createElement('td');
                     td.innerText = element[order];
                 }
+                td.dataset.value = order;
                 tr.append(td);
             });
             tbody.append(tr);
@@ -149,13 +147,23 @@ export default class Pagination {
 
     fetchData = async () => {
         try {
-            const response = await fetch(`${this.searchUrl}?_page=${this.currentPage}&_limit=${this.perPage}`);
+            let params = null;
+            if (this.method === 'GET') {
+                const tempParams = Object.entries(this.options);
+                tempParams.forEach((param, paramKey) => {
+                    params = param.join('&');
+                });
+                console.log(params);
+            } else {
+
+            }
+            console.log(params);
+            const response = await fetch(`${this.searchUrl}?_page=${this.currentPage}&_limit=${this.perPage}${params}`);
             if (!response.ok) {
                 throw new Error("Une erreur est survenue.");
             }
 
-            const data = await response.json();
-            return data;
+            return await response.json();
         } catch(error) {
             console.error(error);
             return error;
@@ -170,6 +178,7 @@ export default class Pagination {
         errorMessage.innerText = message;
         error.append(errorMessage);
         this.container.append(error);
+        this.error = true;
     }
 
     removeError = () => {
@@ -177,6 +186,7 @@ export default class Pagination {
         if (error) {
             error.remove();
         }
+        this.error = false;
     }
 
     createNoData = () => {
@@ -238,29 +248,36 @@ export default class Pagination {
         }
     }
 
-    updatePagination = async (direction) => {
-        try {
-            switch (direction) {
-                case 'prev':
-                    if (this.currentPage > 1) {
-                        this.currentPage--;
-                    }
-                    break;
-                case 'next':
-                    if (this.currentPage < this.maxPage) {
-                        this.currentPage++;
-                    }
-                    break;
-                default:
-                    throw new Error(`Direction "${direction}" inconnue.`);
+    updatePagination = async (direction = null) => {
+        if (direction) {
+            try {
+                switch (direction) {
+                    case 'prev':
+                        if (this.currentPage > 1) {
+                            this.currentPage--;
+                        }
+                        break;
+                    case 'next':
+                        if (this.currentPage < this.maxPage) {
+                            this.currentPage++;
+                        }
+                        break;
+                    default:
+                        throw new Error(`Direction "${direction}" inconnue.`);
+                }
+            } catch (error) {
+                console.error(error);
+                return;
             }
-        } catch (error) {
-            console.error(error);
-            return;
         }
         const table = this.container.querySelector(`#table-${this.container.dataset.paginationName}`);
         const skeleton = skeletonTable();
-        this.replaceData(skeleton);
+        if (this.error) {
+            this.removeData();
+            this.appendData(skeleton);
+        } else {
+            this.replaceData(skeleton);
+        }
         const data = await this.fetchData();
         if (data instanceof Error) {
             this.createError(data.message);

@@ -18,11 +18,15 @@ body {
         background-color: hsl(200, 20%, 95%);
     }
 }
+.clickable {
+    cursor: pointer;
+}
 
 .skeleton-element {
     width: auto;
     height: 1em;
     animation: skeleton-loading 1s linear infinite alternate;
+    cursor: default !important;
 }
 
 .error {

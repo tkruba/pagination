@@ -1,38 +1,30 @@
 import Pagination from "./pagination.js";
 import Dialog from "./dialog.js";
+import { getFilters } from "./filterslist.js";
 
 window.onload = (event) => {
     const showBtn = document.querySelector('#openDialog');
 
     const content = document.createElement('div');
-    content.classList.add('pagination-container');
-    content.id = 'items-list';
-    content.dataset.paginationName = 'test';
+    const contentFilter = document.createElement('div');
 
-    const contentCallback = () => {
-        const columns = [
-            {
-                label: "Numéro",
-                value: "id"
-            },
-            {
-                label: "Titre",
-                value: "title"
-            }
-        ];
-        const pagination = new Pagination(
-            content,
-            columns,
-            null,
-            `https://jsonplaceholder.typicode.com/posts`,
-            function () {},
-            {},
-            10,
-            "GET",
-            true
-        );
-        pagination.init();
-    }
+    const nameFilter = document.createElement('input');
+    nameFilter.type = "text";
+    nameFilter.dataset.filter = "true";
+    nameFilter.name = "name";
+    nameFilter.value = "maximum";
+
+    const searchButton = document.createElement('button');
+    searchButton.innerText = 'Filtrer';
+
+    contentFilter.append(nameFilter, searchButton);
+
+    const contentPagination = document.createElement('div');
+    contentPagination.classList.add('pagination-container');
+    contentPagination.id = 'items-list';
+    contentPagination.dataset.paginationName = 'test';
+
+    content.append(contentFilter, contentPagination);
 
     const dialog = new Dialog(
         showBtn,
@@ -40,7 +32,42 @@ window.onload = (event) => {
         content,
         null,
         null,
-        contentCallback
+        () => {
+            const columns = [
+                {
+                    label: "Numéro",
+                    value: "id"
+                },
+                {
+                    label: "Titre",
+                    value: "title"
+                }
+            ];
+            const pagination = new Pagination(
+                contentPagination,
+                columns,
+                searchButton,
+                `https://jsonplaceholder.typicode.com/posts`,
+                function (data) {
+                    data.forEach(element => {
+                        element.classList.add('clickable');
+                        element.removeEventListener('click', (event));
+                        element.addEventListener('click', (event) => {
+                            if (event.currentTarget.firstElementChild.classList.contains('skeleton-element')) {
+                                return;
+                            }
+                            dialog.closeDialog();
+                        });
+                    });
+                },
+                function () {},
+                getFilters(contentFilter),
+                10,
+                "GET",
+                false
+            );
+            pagination.init();
+        }
     );
     dialog.init();
 }

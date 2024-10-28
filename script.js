@@ -3,7 +3,7 @@ import Dialog from "./dialog.js";
 import { getFilters } from "./filterslist.js";
 
 window.onload = (event) => {
-    const showBtn = document.querySelector('#openDialog');
+    const showBtn = document.querySelectorAll('.open');
 
     const content = document.createElement('div');
     const contentFilter = document.createElement('div');
@@ -28,6 +28,7 @@ window.onload = (event) => {
 
     const dialog = new Dialog(
         showBtn,
+        "popover",
         "Title du turfu",
         content,
         null,
